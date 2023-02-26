@@ -20,15 +20,14 @@ print(f"Using device: {device}")
 
 
 # Create known data
-a = 4.2
-b = -42
-c = 69
+weight = 4.2
+bias = 6.9
 
 start = 0
-end = 10
-step = 0.01
+end = 1
+step = 0.02
 X = torch.arange(start, end, step).unsqueeze(dim=1)
-y = (a * (X)**2) + (b * X) + c
+y = weight * X + bias
 
 # Create a train/test split
 train_split = int(0.8 * len(X))
@@ -68,23 +67,22 @@ def plot_predictions(train_data = X_train,
     plt.show()
 
 # Create a linear regression model class
-class Parabola(nn.Module):
+class LinearRegressionModelv2(nn.Module):
     def __init__(self):
         super().__init__()
-        self.a = nn.Parameter(torch.randn(1, requires_grad=True, dtype=torch.float))
-        self.b = nn.Parameter(torch.randn(1, requires_grad=True, dtype=torch.float))
-        self.c = nn.Parameter(torch.randn(1, requires_grad=True, dtype=torch.float))
+        # Use nn.Linear() for creating the model parameters
+        self.linear_layer = nn.Linear(in_features=1, out_features=1)
     
     # Forward method to define the computation in the model
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return (self.a * (x)**2) + (self.b * x) + self.c
+        return self.linear_layer(x)
     
 # Create a random seed
 SEED = 69
 torch.manual_seed(SEED)
 
 # Create an instance of the model
-model_0 = Parabola()
+model_0 = LinearRegressionModelv2()
 
 # Make untrained predictions
 with torch.inference_mode():
@@ -101,7 +99,7 @@ loss_fn = nn.L1Loss()
 optimizer = torch.optim.SGD(params=model_0.parameters(), lr=0.01)
 
 # Create a training and testing loop
-epochs = 200000
+epochs = 10000
 
 epoch_count = []
 loss_values = []
@@ -118,8 +116,8 @@ for epoch in range(epochs):
     loss = loss_fn(y_pred, y_train)
     
     # Adjust the learning rate as the model gets more accurate (don't know if this is better than a scheduler or not)
-    if loss < 4.6:
-        if loss < .1:
+    if loss < 0.1:
+        if loss < 0.001:
             for param_group in optimizer.param_groups:
                 param_group['lr'] = 0.00001
         else:  
@@ -145,7 +143,7 @@ for epoch in range(epochs):
         # 2. Calculate the loss
         test_loss = loss_fn(test_pred, y_test)
         
-    if epoch % 100 == 0:
+    if epoch % 20 == 0:
         epoch_count.append(epoch)
         loss_values.append(loss)
         test_loss_values.append(test_loss)
@@ -170,8 +168,6 @@ def plot_loss(epoch_count=epoch_count, loss_values=loss_values, test_loss_values
     plt.xlabel("Epochs")
     plt.legend()
     plt.show()
-    
-plot_loss()
 
 with torch.inference_mode():
     y_preds_new = model_0(X_test)
@@ -179,14 +175,14 @@ with torch.inference_mode():
 plot_predictions(predictions=y_preds_new)
 print(f"Training took {endtime-start} seconds.")
 
-# Saving the Parabola model
+# Saving the LinearRegression model
 
 # 1. Create model's directory
 MODEL_PATH = Path("models")
 MODEL_PATH.mkdir(parents=True, exist_ok=True)
 
 # 2. Create model save path
-MODEL_NAME = "parabola_model_2.pth"
+MODEL_NAME = "linear_model_v2_1.pth"
 MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
 
 # 3. Save the model state_dict
